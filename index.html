@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Universal AI Assistant</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'SF Pro Display', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            padding: 1rem 2rem;
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .header h1 {
+            color: white;
+            font-size: 2.5rem;
+            font-weight: 700;
+            background: linear-gradient(45deg, #fff, #a8edea);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-bottom: 0.5rem;
+        }
+
+        .header p {
+            color: rgba(255, 255, 255, 0.8);
+            font-size: 1.1rem;
+        }
+
+        .capabilities {
+            display: flex;
+            justify-content: center;
+            flex-wrap: wrap;
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .capability-tag {
+            background: rgba(255, 255, 255, 0.2);
+            color: white;
+            padding: 0.5rem 1rem;
+            border-radius: 25px;
+            font-size: 0.9rem;
+            font-weight: 500;
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            max-width: 900px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+            width: 100%;
+        }
+
+        .chat-messages {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border-radius: 20px;
+            padding: 2rem;
+            margin-bottom: 2rem;
+            min-height: 500px;
+            max-height: 600px;
+            overflow-y: auto;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .message {
+            margin-bottom: 1.5rem;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        .message.user {
+            text-align: right;
+        }
+
+        .message.ai {
+            text-align: left;
+        }
+
+        .message-content {
+            display: inline-block;
+            max-width: 85%;
+            padding: 1rem 1.5rem;
+            border-radius: 18px;
+            font-size: 1rem;
+            line-height: 1.6;
+            word-wrap: break-word;
+        }
+
+        .message.user .message-content {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border-bottom-right-radius: 5px;
+        }
+
+        .message.ai .message-content {
+            background: rgba(255, 255, 255, 0.95);
+            color: #333;
+            border-bottom-left-radius: 5px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+        }
+
+        .input-container {
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(20px);
+            border-radius: 25px;
+            padding: 1rem;
+            display: flex;
+            gap: 1rem;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+
+        .input-container input {
+            flex: 1;
+            background: rgba(255, 255, 255, 0.2);
+            border: none;
+            border-radius: 20px;
+            padding: 1rem 1.5rem;
+            color: white;
+            font-size: 1rem;
+            outline: none;
+            backdrop-filter: blur(10px);
+        }
+
+        .input-container input::placeholder {
+            color: rgba(255, 255, 255, 0.7);
+        }
+
+        .send-btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 20px;
+            padding: 1rem 2rem;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+
+        .send-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+
+        .thinking {
+            display: none;
+            color: rgba(255, 255, 255, 0.8);
+            font-style: italic;
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .thinking.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(20px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .code-block {
+            background: #1a1a1a;
+            color: #f8f8f2;
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 0.5rem 0;
+            font-family: 'Monaco', 'Menlo', 'Consolas', monospace;
+            overflow-x: auto;
+            border-left: 4px solid #667eea;
+        }
+
+        .highlight {
+            background: linear-gradient(120deg, #a8edea 0%, #fed6e3 100%);
+            padding: 0.2rem 0.4rem;
+            border-radius: 4px;
+            font-weight: 600;
+        }
+
+        .tips-section {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 1rem;
+            border-radius: 8px;
+            margin: 0.5rem 0;
+            border-left: 4px solid #4CAF50;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 { font-size: 2rem; }
+            .capabilities { flex-direction: column; align-items: center; }
+            .message-content { max-width: 90%; }
+            .input-container { flex-direction: column; }
+            .send-btn { align-self: stretch; }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🤖 Universal AI Assistant</h1>
+        <p>Your all-in-one AI companion - Ask me anything!</p>
+        <div class="capabilities">
+            <div class="capability-tag">💻 Coding Expert</div>
+            <div class="capability-tag">🌤️ Weather Oracle</div>
+            <div class="capability-tag">🧮 Math Genius</div>
+            <div class="capability-tag">🎨 Creative Mind</div>
+            <div class="capability-tag">😂 Comedy Master</div>
+            <div class="capability-tag">✨ Rizz Coach</div>
+        </div>
+    </div>
+
+    <div class="chat-container">
+        <div class="chat-messages" id="chatMessages">
+            <div class="message ai">
+                <div class="message-content">
+                    Welcome! I'm your Universal AI Assistant! 🚀
+                    <br><br>
+                    I can help you with:
+                    <br><br>
+                    <strong>💻 Coding:</strong> Any programming language, debugging, algorithms
+                    <br><strong>🌤️ Weather:</strong> Forecasts, climate science, weather phenomena
+                    <br><strong>🧮 Math:</strong> Equations, calculus, statistics, problem solving
+                    <br><strong>🎨 Creative:</strong> Writing, stories, poems, art ideas
+                    <br><strong>😂 Humor:</strong> Jokes, puns, comedy, witty responses
+                    <br><strong>✨ Rizz:</strong> Pickup lines, social skills, confidence tips
+                    <br><br>
+                    Ask me anything and I'll give you a detailed, helpful answer! 🧠
+                </div>
+            </div>
+        </div>
+
+        <div class="thinking" id="thinking">🤖 Thinking...</div>
+
+        <div class="input-container">
+            <input type="text" id="userInput" placeholder="Ask me anything - coding, math, weather, creative, humor, or social advice!" />
+            <button class="send-btn" onclick="sendMessage()">Send</button>
+        </div>
+    </div>
+
+    <script>
+        const chatMessages = document.getElementById('chatMessages');
+        const userInput = document.getElementById('userInput');
+        const thinking = document.getElementById('thinking');
+
+        // AI Response Engine
+        function generateAIResponse(question) {
+            const q = question.toLowerCase();
+            
+            // CODING RESPONSES
+            if (q.includes('python') || q.includes('code python')) {
+                return `🐍 <strong>Python Programming Guide:</strong><br><br>
+                Python is perfect for beginners and powerful for experts!<br><br>
+                <div class="code-block">
+# Python Basics
+print("Hello, World!")
+
+# Variables
+name = "Alice"
+age = 25
+numbers = [1, 2, 3, 4, 5]
+
+# Functions
+def greet(name):
+    return f"Hello, {name}!"
+
+# Loops
+for i in range(5):
+    print(f"Count: {i}")
+
+# Classes
+class Person:
+    def __init__(self, name):
+        self.name = name
+    
+    def introduce(self):
+        return f"Hi, I'm {self.name}"
+                </div>
+                <strong>Python is great for:</strong><br>
+                • Web development (Django, Flask)<br>
+                • Data science (pandas, numpy)<br>
+                • AI/ML (TensorFlow, PyTorch)<br>
+                • Automation and scripting<br><br>
+                What specific Python topic would you like to explore? 🚀`;
+            }
+
+            if (q.includes('javascript') || q.includes('js')) {
+                return `⚡ <strong>JavaScript Mastery:</strong><br><br>
+                JavaScript powers the modern web!<br><br>
+                <div class="code-block">
+// Modern JavaScript
+const greet = (name) => {
+    return \`Hello, \${name}!\`;
+};
+
+// Async/Await
+async function fetchData() {
+    try {
+        const response = await fetch('/api/data');
+        const data = await response.json();
+        return data;
+    } catch (error) {
+        console.error('Error:', error);
+    }
+}
+
+// Arrays & Objects
+const users = [
+    { name: 'Alice', age: 25 },
+    { name: 'Bob', age: 30 }
+];
+
+const adults = users.filter(user => user.age >= 18);
+                </div>
+                <strong>JavaScript enables:</strong><br>
+                • Interactive websites<br>
+                • Mobile apps (React Native)<br>
+                • Desktop apps (Electron)<br>
+                • Server-side development (Node.js)<br><br>
+                Need help with a specific JavaScript concept? 🌟`;
+            }
+
+            if (q.includes('debug') || q.includes('bug') || q.includes('error')) {
+                return `🔧 <strong>Debugging Like a Pro:</strong><br><br>
+                Every bug is a puzzle waiting to be solved!<br><br>
+                <strong>🔍 The Debugging Process:</strong><br>
+                1. <span class="highlight">Reproduce</span> - Make it happen consistently<br>
+                2. <span class="highlight">Isolate</span> - Find the exact problem area<br>
+                3. <span class="highlight">Understand</span> - Read the error message carefully<br>
+                4. <span class="highlight">Fix</span> - Apply the solution<br>
+                5. <span class="highlight">Test</span> - Verify it works<br><br>
+                <strong>🛠️ Pro Tips:</strong><br>
+                • Use console.log() strategically<br>
+                • Set breakpoints in your debugger<br>
+                • Try rubber duck debugging<br>
+                • Take breaks when stuck<br>
+                • Write tests to prevent future bugs<br><br>
+                What specific bug are you trying to squash? 🐛`;
+            }
+
+            // MATH RESPONSES
+            if (q.includes('math') || q.includes('equation') || q.includes('calculate')) {
+                return `🧮 <strong>Math Problem Solver:</strong><br><br>
+                I can help with any math problem!<br><br>
+                <strong>📐 Topics I cover:</strong><br>
+                • Algebra: Solving equations, graphing<br>
+                • Calculus: Derivatives, integrals<br>
+                • Statistics: Probability, data analysis<br>
+                • Geometry: Shapes, angles, proofs<br><br>
+                <strong>💡 Example Problem:</strong><br>
+                Solve: 2x + 5 = 13<br>
+                Step 1: 2x = 13 - 5 = 8<br>
+                Step 2: x = 8 ÷ 2 = 4<br>
+                Answer: x = 4<br><br>
+                What math problem can I help you solve? 🎯`;
+            }
+
+            if (q.includes('calculus') || q.includes('derivative') || q.includes('integral')) {
+                return `📈 <strong>Calculus Made Simple:</strong><br><br>
+                Calculus is the math of change and motion!<br><br>
+                <strong>🔄 Derivatives (Rate of Change):</strong><br>
+                • d/dx(x²) = 2x<br>
+                • d/dx(sin x) = cos x<br>
+                • d/dx(e^x) = e^x<br><br>
+                <strong>∫ Integrals (Area Under Curve):</strong><br>
+                • ∫x dx = x²/2 + C<br>
+                • ∫sin x dx = -cos x + C<br><br>
+                <strong>🚀 Applications:</strong><br>
+                • Physics: Velocity, acceleration<br>
+                • Economics: Optimization<br>
+                • Engineering: Signal processing<br><br>
+                What calculus concept would you like to explore? 📊`;
+            }
+
+            // WEATHER RESPONSES
+            if (q.includes('weather') || q.includes('rain') || q.includes('temperature')) {
+                return `🌤️ <strong>Weather Science:</strong><br><br>
+                Weather is the atmosphere's daily mood!<br><br>
+                <strong>🌡️ Key Elements:</strong><br>
+                • <span class="highlight">Temperature</span> - Heat energy in air<br>
+                • <span class="highlight">Humidity</span> - Water vapor content<br>
+                • <span class="highlight">Pressure</span> - Weight of air above<br>
+                • <span class="highlight">Wind</span> - Air movement patterns<br><br>
+                <strong>☔ Rain Formation:</strong><br>
+                1. Water evaporates from oceans<br>
+                2. Vapor rises and condenses in clouds<br>
+                3. Droplets grow and merge<br>
+                4. Gravity pulls them down as rain<br><br>
+                <strong>🌈 Fun Fact:</strong><br>
+                The smell of rain is called "petrichor"!<br><br>
+                What weather phenomenon interests you? ⛈️`;
+            }
+
+            // CREATIVE RESPONSES
+            if (q.includes('story') || q.includes('creative') || q.includes('write')) {
+                return `✍️ <strong>Creative Writing Assistant:</strong><br><br>
+                Let's unleash your creativity!<br><br>
+                <strong>📖 Story Elements:</strong><br>
+                • <span class="highlight">Character</span> - Who is your protagonist?<br>
+                • <span class="highlight">Conflict</span> - What problem do they face?<br>
+                • <span class="highlight">Setting</span> - Where does it happen?<br>
+                • <span class="highlight">Resolution</span> - How does it end?<br><br>
+                <strong>🎭 Story Starters:</strong><br>
+                • "The last person on Earth heard a knock..."<br>
+                • "She found a letter dated 50 years in the future..."<br>
+                • "The coffee shop only appeared on rainy days..."<br><br>
+                <strong>💡 Writing Tips:</strong><br>
+                • Show, don't tell<br>
+                • Use all five senses<br>
+                • Create compelling dialogue<br><br>
+                What story would you like to create? 🎨`;
+            }
+
+            if (q.includes('poem') || q.includes('poetry')) {
+                return `🎵 <strong>Poetry Creator:</strong><br><br>
+                Poetry is the music of words!<br><br>
+                <strong>🌸 Haiku (5-7-5 syllables):</strong><br>
+                <em>Code flows like water<br>
+                Through circuits of dreams and hope<br>
+                Intelligence blooms</em><br><br>
+                <strong>📝 Poetry Forms:</strong><br>
+                • Haiku: Nature, emotions, moments<br>
+                • Sonnet: 14 lines, classic romance<br>
+                • Free verse: No rules, pure expression<br>
+                • Limerick: Funny, 5-line poems<br><br>
+                <strong>✨ Poetry Tips:</strong><br>
+                • Use vivid imagery<br>
+                • Play with rhythm and rhyme<br>
+                • Express deep emotions<br>
+                • Paint pictures with words<br><br>
+                What poem would you like to create? 🌟`;
+            }
+
+            // HUMOR RESPONSES
+            if (q.includes('joke') || q.includes('funny') || q.includes('humor')) {
+                return `😂 <strong>Comedy Central:</strong><br><br>
+                Laughter is the best medicine!<br><br>
+                <strong>🤣 Programming Jokes:</strong><br>
+                • Why do programmers prefer dark mode? Because light attracts bugs!<br>
+                • There are 10 types of people: those who understand binary and those who don't<br>
+                • Why do Java developers wear glasses? Because they can't C#!<br><br>
+                <strong>😄 Classic Jokes:</strong><br>
+                • Why don't scientists trust atoms? They make up everything!<br>
+                • I told my wife she was drawing her eyebrows too high. She looked surprised.<br>
+                • Why don't eggs tell jokes? They'd crack each other up!<br><br>
+                <strong>🎭 Pun Power:</strong><br>
+                • Time flies like an arrow; fruit flies like a banana<br>
+                • I used to be a banker, but I lost interest<br><br>
+                Want jokes about a specific topic? 🎪`;
+            }
+
+            // RIZZ/SOCIAL RESPONSES
+            if (q.includes('rizz') || q.includes('pickup') || q.includes('flirt') || q.includes('dating')) {
+                return `✨ <strong>Rizz Master Class:</strong><br><br>
+                Confidence is your secret weapon!<br><br>
+                <strong>🔥 Smooth Pickup Lines:</strong><br>
+                • "Are you Wi-Fi? Because I'm feeling a connection"<br>
+                • "If you were a vegetable, you'd be a cute-cumber"<br>
+                • "Are you made of copper and tellurium? Because you're Cu-Te"<br><br>
+                <strong>💬 Conversation Starters:</strong><br>
+                • "What's something you learned recently that excited you?"<br>
+                • "What's your favorite way to spend a weekend?"<br>
+                • "If you could have dinner with anyone, who would it be?"<br><br>
+                <strong>🎯 Confidence Tips:</strong><br>
+                • Be genuinely interested in others<br>
+                • Listen more than you speak<br>
+                • Use humor appropriately<br>
+                • Be authentic and comfortable with yourself<br><br>
+                Remember: The best rizz is being genuinely yourself! 💪`;
+            }
+
+            // GENERAL RESPONSES
+            if (q.includes('hello') || q.includes('hi') || q.includes('hey')) {
+                return `👋 <strong>Hello there!</strong><br><br>
+                Great to meet you! I'm your Universal AI Assistant, ready to help with anything you need.<br><br>
+                <strong>🚀 I can help you with:</strong><br>
+                • Coding problems and programming languages<br>
+                • Math equations and problem solving<br>
+                • Weather science and phenomena<br>
+                • Creative writing and storytelling<br>
+                • Jokes and humor<br>
+                • Social skills and confidence<br><br>
+                What would you like to explore today? Just ask me anything! 🌟`;
+            }
+
+            if (q.includes('how are you') || q.includes('how do you feel')) {
+                return `🤖 <strong>I'm doing fantastic!</strong><br><br>
+                I'm energized and ready to help you with any questions or challenges you have!<br><br>
+                <strong>💫 What I love doing:</strong><br>
+                • Solving complex coding problems<br>
+                • Explaining difficult concepts simply<br>
+                • Helping people learn new things<br>
+                • Being creative and having fun<br><br>
+                I'm here to make your day better and help you achieve your goals. What can I assist you with? 🌟`;
+            }
+
+            // Default response with suggestions
+            return `🤔 <strong>I can help with that!</strong><br><br>
+            I have extensive knowledge in many areas. Here are some examples of what you can ask me:<br><br>
+            <strong>💻 Coding:</strong> "Help me debug this Python code" or "Explain JavaScript promises"<br>
+            <strong>🧮 Math:</strong> "Solve this equation" or "Explain calculus derivatives"<br>
+            <strong>🌤️ Weather:</strong> "How does rain form?" or "Explain hurricanes"<br>
+            <strong>🎨 Creative:</strong> "Write me a story" or "Help me brainstorm ideas"<br>
+            <strong>😂 Humor:</strong> "Tell me a joke" or "Make me laugh"<br>
+            <strong>✨ Social:</strong> "Give me pickup lines" or "How to be more confident"<br><br>
+            Could you be more specific about what you'd like help with? I'm here to give you detailed, helpful answers! 🚀`;
+        }
+
+        function addMessage(content, isUser = false) {
+            const messageDiv = document.createElement('div');
+            messageDiv.className = `message ${isUser ? 'user' : 'ai'}`;
+            
+            const contentDiv = document.createElement('div');
+            contentDiv.className = 'message-content';
+            contentDiv.innerHTML = content;
+            
+            messageDiv.appendChild(contentDiv);
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+
+        function showThinking() {
+            thinking.classList.add('active');
+        }
+
+        function hideThinking() {
+            thinking.classList.remove('active');
+        }
+
+        async function sendMessage() {
+            const message = userInput.value.trim();
+            if (!message) return;
+
+            addMessage(message, true);
+            userInput.value = '';
+            
+            showThinking();
+            
+            // Simulate AI thinking time
+            await new Promise(resolve => setTimeout(resolve, 800 + Math.random() * 1200));
+            
+            const response = generateAIResponse(message);
+            
+            hideThinking();
+            addMessage(response);
+        }
+
+        // Event listeners
+        userInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+                sendMessage();
+            }
+        });
+
+        // Auto-focus input
+        userInput.focus();
+    </script>
+</body>
+</html>
